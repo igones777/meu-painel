@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#070707">
+<title>Meu Painel — Salário e Agenda</title>
+<style>
+  :root {
+    --bg: #070707;
+    --surface: #121212;
+    --surface-2: #1a1a1a;
+    --surface-3: #242424;
+    --line: rgba(255, 255, 255, .08);
+    --line-strong: rgba(255, 255, 255, .15);
+    --text: #ffffff;
+    --muted: #9a9a9a;
+    --accent: #e30613;
+    --accent-2: #ff1f2d;
+    --grad: linear-gradient(135deg, #ff1f2d 0%, #c4000f 100%);
+    --ok: #ffffff;
+    --warn: #ffb84d;
+    --bad: #ff5a64;
+    --radius: 18px;
+    --radius-sm: 12px;
+    --shadow: 0 10px 30px -12px rgba(0, 0, 0, .8);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { color-scheme: dark; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--text);
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    background:
+      radial-gradient(900px 420px at 85% -10%, rgba(227, 6, 19, .16), transparent 60%),
+      radial-gradient(700px 380px at -10% 10%, rgba(255, 255, 255, .05), transparent 60%),
+      var(--bg);
+    background-attachment: fixed;
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  .wrap {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: calc(28px + env(safe-area-inset-top, 0px)) 18px calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 750;
+    letter-spacing: -.025em;
+    margin: 0 0 20px;
+    background: linear-gradient(120deg, #ffffff 45%, #ff8a92 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  h2 {
+    font-size: 1.02rem;
+    font-weight: 650;
+    letter-spacing: -.01em;
+    margin: 0 0 14px;
+  }
+
+  /* Abas */
+  .tabs {
+    position: sticky;
+    top: calc(8px + env(safe-area-inset-top, 0px));
+    z-index: 5;
+    display: flex;
+    gap: 4px;
+    padding: 5px;
+    margin-bottom: 20px;
+    background: rgba(19, 24, 37, .78);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--line-strong);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+  }
+  .tab {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    padding: 12px 10px;
+    border-radius: 12px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s ease, color .2s ease, transform .15s ease;
+  }
+  .tab:hover { color: var(--text); background: rgba(255, 255, 255, .05); }
+  .tab[aria-selected="true"] {
+    background: var(--grad);
+    color: #ffffff;
+    box-shadow: 0 6px 18px -6px rgba(227, 6, 19, .65);
+  }
+  .tab:active { transform: scale(.98); }
+  :is(.tab, button, input, select):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+
+  /* Painéis */
+  .panel {
+    background: linear-gradient(180deg, rgba(255, 255, 255, .03), rgba(255, 255, 255, 0)), var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+
+  /* Cards de resumo */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .card {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 108px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, 0)), var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow);
+    transition: border-color .2s ease, transform .2s ease;
+  }
+  .card:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+  .card::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--grad);
+    opacity: .85;
+  }
+  .card:nth-child(2)::before { background: linear-gradient(180deg, #ffffff, #bdbdbd); }
+  .card:nth-child(3)::before { background: linear-gradient(180deg, #e30613, #ffffff); }
+  .card small { color: var(--muted); font-size: .8rem; font-weight: 500; }
+  .card strong {
+    font-size: 1.5rem;
+    font-weight: 750;
+    letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+    word-break: break-word;
+  }
+  .card.saldo strong.neg { color: var(--bad); }
+  .card.saldo strong.pos { color: var(--ok); }
+  .card .sub { color: var(--muted); font-size: .76rem; margin-top: auto; padding-top: 6px; display: block; }
+
+  /* Barra de progresso */
+  .bar-head { display: flex; justify-content: space-between; align-items: baseline; font-size: .92rem; margin-bottom: 12px; }
+  .bar-head strong { font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+  .bar { height: 14px; background: var(--surface-3); border-radius: 99px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0, 0, 0, .4); }
+  .bar > div { height: 100%; width: 0; border-radius: 99px; transition: width .5s cubic-bezier(.2, .8, .2, 1), background .3s ease; }
+
+  /* Formulários */
+  form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  form .full { grid-column: 1 / -1; }
+  label { display: grid; gap: 6px; font-size: .8rem; font-weight: 500; color: var(--muted); }
+  input, select {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    font: inherit;
+    font-size: 16px;
+    transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+  }
+  input::placeholder { color: #6e6e6e; }
+  input:hover, select:hover { border-color: rgba(255, 255, 255, .2); }
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(227, 6, 19, .18);
+    background: var(--surface-3);
+  }
+  select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 38px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%239a9a9a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+  }
+  input[type="date"], input[type="time"] { min-width: 0; }
+  .row { display: flex; gap: 12px; align-items: end; }
+  .row label { flex: 1; }
+
+  /* Botões */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 48px;
+    padding: 12px 20px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: var(--grad);
+    color: #ffffff;
+    font: inherit;
+    font-weight: 650;
+    cursor: pointer;
+    box-shadow: 0 8px 20px -8px rgba(227, 6, 19, .7);
+    transition: transform .18s ease, box-shadow .18s ease, filter .18s ease, background .18s ease, border-color .18s ease, color .18s ease;
+  }
+  .btn:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 12px 26px -8px rgba(227, 6, 19, .85); }
+  .btn:active { transform: translateY(0) scale(.98); }
+  .btn.ghost {
+    background: var(--surface-3);
+    color: var(--text);
+    border: 1px solid var(--line-strong);
+    box-shadow: none;
+  }
+  .btn.ghost:hover { background: #2e2e2e; border-color: rgba(255, 255, 255, .22); box-shadow: none; filter: none; }
+  .btn.danger {
+    background: transparent;
+    color: var(--bad);
+    border: 1px solid rgba(255, 90, 100, .3);
+    box-shadow: none;
+  }
+  .btn.danger:hover { background: rgba(255, 90, 100, .12); border-color: var(--bad); box-shadow: none; filter: none; }
+  .btn.small { min-height: 38px; padding: 8px 14px; font-size: .85rem; border-radius: 10px; }
+
+  /* Listas */
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  li.item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    padding: 14px 16px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    transition: border-color .2s ease, background .2s ease, transform .2s ease;
+  }
+  li.item:hover { border-color: var(--line-strong); background: #202020; }
+  li.item .info { flex: 1 1 200px; min-width: 0; }
+  li.item .title { font-weight: 600; word-break: break-word; }
+  li.item .meta { color: var(--muted); font-size: .8rem; margin-top: 3px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  li.item .value { font-weight: 700; font-size: 1.02rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  li.item .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+  li.done { opacity: .72; }
+  li.done .title { text-decoration: line-through; color: var(--muted); }
+  li.item.urgente { border-left: 3px solid var(--bad); background: linear-gradient(90deg, rgba(255, 90, 100, .07), transparent 40%), var(--surface-2); }
+
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: .72rem; font-weight: 650; line-height: 1.5; }
+  .tag.pago { background: rgba(255, 255, 255, .14); color: var(--ok); }
+  .tag.pendente { background: rgba(255, 184, 77, .14); color: var(--warn); }
+  .tag.urgente { background: rgba(255, 90, 100, .14); color: var(--bad); }
+
+  /* Filtros da agenda */
+  .filters {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    margin-bottom: 16px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+  }
+  .filters .btn { flex: 1; min-height: 42px; padding: 8px 10px; box-shadow: none; background: transparent; border: 0; color: var(--muted); }
+  .filters .btn:hover { background: rgba(255, 255, 255, .06); color: var(--text); transform: none; filter: none; box-shadow: none; }
+  .filters .btn[aria-pressed="true"] { background: var(--grad); color: #ffffff; box-shadow: 0 6px 16px -6px rgba(227, 6, 19, .7); }
+
+  .empty { color: var(--muted); text-align: center; padding: 26px 10px; font-size: .92rem; border: 1px dashed var(--line-strong); border-radius: 14px; }
+
+  /* Tablet */
+  @media (max-width: 760px) {
+    .cards { grid-template-columns: 1fr; gap: 12px; }
+    .card { min-height: 0; }
+  }
+
+  /* Celular */
+  @media (max-width: 560px) {
+    body { font-size: 14.5px; }
+    .wrap { padding-left: 14px; padding-right: 14px; }
+    h1 { font-size: 1.35rem; }
+    .panel { padding: 16px; border-radius: 16px; }
+    form { grid-template-columns: 1fr; gap: 12px; }
+    .row { flex-direction: column; align-items: stretch; }
+    .tab { padding: 12px 6px; font-size: .88rem; }
+    li.item .actions { width: 100%; margin-left: 0; }
+    li.item .actions .btn { flex: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; }
+  }
+
+  /* Listras tricolor no topo */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 5px;
+    z-index: 20;
+    background: linear-gradient(90deg, #e30613 0 33.34%, #ffffff 33.34% 66.67%, #000000 66.67% 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, .25);
+  }
+
+  /* Quarto */
+  .room-hint { color: var(--muted); margin: 0 0 14px; font-size: .9rem; }
+  .room {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background-color: #0d0d0d;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 10% 10%;
+    border: 2px solid var(--line-strong);
+    border-radius: 16px;
+  }
+  .room-empty {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    padding: 20px; text-align: center;
+    color: var(--muted); font-size: .9rem;
+    pointer-events: none;
+  }
+  .room-item {
+    position: absolute;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: grab;
+    background: var(--surface-3);
+    border: 2px solid rgba(255, 255, 255, .35);
+    border-radius: 10px;
+    box-shadow: 0 6px 16px -6px rgba(0, 0, 0, .8);
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .room-item:hover { border-color: #ffffff; }
+  .room-item.dragging { cursor: grabbing; z-index: 5; border-color: var(--accent); box-shadow: 0 14px 28px -8px rgba(227, 6, 19, .6); }
+  .room-item img { display: block; width: 100%; height: auto; pointer-events: none; -webkit-user-drag: none; }
+  .room-item .ph { aspect-ratio: 1; display: grid; place-items: center; background: var(--grad); color: #ffffff; font-size: 1.4rem; font-weight: 750; }
+  .room-item .lbl {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 2px 4px;
+    background: rgba(0, 0, 0, .75);
+    font-size: .68rem; font-weight: 600; text-align: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .thumb { width: 46px; height: 46px; flex: none; object-fit: cover; border-radius: 10px; background: var(--surface-3); }
+  .thumb.ph { display: grid; place-items: center; background: var(--grad); color: #ffffff; font-weight: 750; }
+  .msg-err { color: var(--bad); font-size: .85rem; margin-top: 10px; }
+  .msg-err:empty { display: none; }
+  input[type="file"] { padding: 9px 12px; color: var(--muted); }
+  input[type="file"]::file-selector-button {
+    margin-right: 12px; padding: 8px 14px;
+    background: var(--grad); color: #ffffff;
+    border: 0; border-radius: 9px; font: inherit; font-weight: 600; cursor: pointer;
+  }
+  @media (max-width: 560px) {
+    .tab { font-size: .8rem; line-height: 1.25; }
+    .room { aspect-ratio: 1 / 1; }
+  }
+
+
+  /* Quarto com medidas reais */
+  .room-wrap { margin-top: 16px; }
+  .room { margin: 0 auto; }
+  .room-item img { height: 100%; object-fit: cover; }
+  .room-item .ph { aspect-ratio: auto; height: 100%; }
+  .room-info { margin: 12px 0 0; color: var(--text); font-size: .88rem; }
+  .room-hint { margin: 8px 0 0; }
+  .dims { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; color: var(--muted); font-size: .85rem; }
+  .dims input { width: 82px; min-height: 40px; padding: 6px 10px; }
+
+
+  /* Item visto de cima: retângulo colorido */
+  .room-item .ph { align-content: center; padding: 2px; overflow: hidden; text-align: center; font-size: .72rem; font-weight: 400; line-height: 1.15; }
+  .room-item .ph .ph-name { display: block; font-weight: 700; word-break: break-word; }
+  .room-item .ph small { display: block; opacity: .85; font-size: .62rem; }
+  input[type="color"] { padding: 4px; cursor: pointer; }
+  .dims input[type="color"] { width: 48px; padding: 3px; }
+  .check { display: flex; align-items: center; gap: 10px; align-self: end; min-height: 48px; color: var(--text); font-size: .85rem; }
+  .check input { width: 20px; min-height: 0; height: 20px; flex: none; accent-color: #e30613; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Meu Painel — Salário e Agenda</h1>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-salario" aria-selected="true" data-tab="salario">Organizador de salário</button>
+    <button class="tab" role="tab" id="tab-agenda" aria-selected="false" data-tab="agenda">Agenda</button>
+    <button class="tab" role="tab" id="tab-quarto" aria-selected="false" data-tab="quarto">Quarto</button>
+  </div>
+
+  <!-- ABA SALÁRIO -->
+  <section id="view-salario">
+    <div class="cards">
+      <div class="card"><small>Salário + entradas</small><strong id="c-entradas">R$ 0,00</strong></div>
+      <div class="card"><small>Total de gastos</small><strong id="c-gastos">R$ 0,00</strong><span class="sub" id="c-gastos-sub"></span></div>
+      <div class="card saldo"><small>Saldo livre</small><strong id="c-saldo">R$ 0,00</strong></div>
+    </div>
+
+    <div class="panel">
+      <div class="bar-head"><span>Salário comprometido</span><strong id="bar-pct">0%</strong></div>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><div id="bar-fill"></div></div>
+    </div>
+
+    <div class="panel">
+      <h2>Salário mensal</h2>
+      <div class="row">
+        <label>Valor (R$)
+          <input type="number" id="salary-input" min="0" step="0.01" inputmode="decimal" placeholder="0,00">
+        </label>
+        <button class="btn" id="salary-save" type="button">Salvar salário</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Entradas extras</h2>
+      <form id="extra-form">
+        <label>Descrição
+          <input type="text" id="extra-desc" required maxlength="60" placeholder="Ex.: Freela, bônus">
+        </label>
+        <label>Valor (R$)
+          <input type="number" id="extra-value" required min="0.01" step="0.01" inputmode="decimal" placeholder="0,00">
+        </label>
+        <button class="btn full" type="submit">Adicionar entrada</button>
+      </form>
+      <ul id="extra-list" style="margin-top:12px"></ul>
+    </div>
+
+    <div class="panel">
+      <h2>Lançar gasto</h2>
+      <form id="exp-form">
+        <label class="full">Descrição
+          <input type="text" id="exp-desc" required maxlength="60" placeholder="Ex.: Aluguel, mercado">
+        </label>
+        <label>Valor (R$)
+          <input type="number" id="exp-value" required min="0.01" step="0.01" inputmode="decimal" placeholder="0,00">
+        </label>
+        <label>Categoria
+          <select id="exp-cat">
+            <option>Moradia</option>
+            <option>Alimentação</option>
+            <option>Transporte</option>
+            <option>Saúde</option>
+            <option>Lazer</option>
+            <option>Educação</option>
+            <option>Contas</option>
+            <option>Outros</option>
+          </select>
+        </label>
+        <label class="full">Status
+          <select id="exp-status">
+            <option value="pendente">Pendente</option>
+            <option value="pago">Pago</option>
+          </select>
+        </label>
+        <button class="btn full" type="submit">Adicionar gasto</button>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h2>Gastos lançados</h2>
+      <ul id="exp-list"></ul>
+    </div>
+  </section>
+
+  <!-- ABA AGENDA -->
+  <section id="view-agenda" hidden>
+    <div class="panel">
+      <h2>Novo compromisso</h2>
+      <form id="task-form">
+        <label class="full">Título
+          <input type="text" id="task-title" required maxlength="80" placeholder="Ex.: Reunião, pagar boleto">
+        </label>
+        <label>Data
+          <input type="date" id="task-date" required>
+        </label>
+        <label>Horário
+          <input type="time" id="task-time">
+        </label>
+        <label class="full">Prioridade
+          <select id="task-prio">
+            <option value="normal">Normal</option>
+            <option value="urgente">Urgente</option>
+          </select>
+        </label>
+        <button class="btn full" type="submit">Adicionar compromisso</button>
+      </form>
+    </div>
+
+    <div class="panel">
+      <div class="filters" role="group" aria-label="Filtros da agenda">
+        <button type="button" class="btn ghost" data-filter="hoje" aria-pressed="true">Hoje</button>
+        <button type="button" class="btn ghost" data-filter="todos" aria-pressed="false">Todos</button>
+        <button type="button" class="btn ghost" data-filter="concluidos" aria-pressed="false">Concluídos</button>
+      </div>
+      <ul id="task-list"></ul>
+    </div>
+  </section>
+
+  <!-- ABA QUARTO -->
+  <section id="view-quarto" hidden>
+    <div class="panel">
+      <h2>Planta do quarto (vista de cima)</h2>
+      <form id="room-size-form">
+        <label>Largura do quarto (m)
+          <input type="number" id="room-w" required min="1" max="20" step="0.01" inputmode="decimal" placeholder="3">
+        </label>
+        <label>Comprimento do quarto (m)
+          <input type="number" id="room-h" required min="1" max="20" step="0.01" inputmode="decimal" placeholder="3">
+        </label>
+        <button class="btn full" type="submit">Aplicar medidas</button>
+      </form>
+      <div class="room-wrap"><div class="room" id="room"></div></div>
+      <p class="room-info" id="room-info"></p>
+      <div class="msg-err" id="room-msg" role="alert"></div>
+      <p class="room-hint">Arraste os itens pra testar onde cada coisa fica. Nada mexe no quarto de verdade.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Novo item</h2>
+      <form id="room-form">
+        <label class="full">Nome do item
+          <input type="text" id="room-name" required maxlength="40" placeholder="Ex.: Cama, guarda-roupa, mesa">
+        </label>
+        <label>Largura (cm)
+          <input type="number" id="room-iw" required min="5" max="1000" step="1" inputmode="numeric" placeholder="Ex.: 140">
+        </label>
+        <label>Comprimento (cm)
+          <input type="number" id="room-ih" required min="5" max="1000" step="1" inputmode="numeric" placeholder="Ex.: 190">
+        </label>
+        <label class="full">Foto do item (opcional)
+          <input type="file" id="room-photo" accept="image/*">
+        </label>
+        <label>Cor do item na planta
+          <input type="color" id="room-color" value="#c4000f">
+        </label>
+        <label class="check">
+          <input type="checkbox" id="room-usephoto">
+          <span>Usar a foto dentro da planta (só se for foto de cima)</span>
+        </label>
+        <button class="btn full" type="submit" id="room-add">Adicionar ao quarto</button>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h2>Itens do quarto</h2>
+      <ul id="room-list"></ul>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "meuPainel:v1";
+  var brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+  var state = loadState();
+  var filter = "hoje";
+
+  /* ---------- Armazenamento ---------- */
+  function defaultState() {
+    return { salary: 0, extras: [], expenses: [], tasks: [] };
+  }
+
+  function loadState() {
+    var base = defaultState();
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return base;
+      var data = JSON.parse(raw);
+      if (!data || typeof data !== "object") return base;
+      base.salary = Number(data.salary) > 0 ? Number(data.salary) : 0;
+      base.extras = Array.isArray(data.extras) ? data.extras : [];
+      base.expenses = Array.isArray(data.expenses) ? data.expenses : [];
+      base.tasks = Array.isArray(data.tasks) ? data.tasks : [];
+    } catch (e) {
+      console.warn("Não foi possível ler os dados salvos:", e);
+    }
+    return base;
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.warn("Não foi possível salvar os dados:", e);
+    }
+  }
+
+  /* ---------- Utilidades ---------- */
+  function $(id) { return document.getElementById(id); }
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function esc(str) {
+    return String(str).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function todayISO() {
+    var d = new Date();
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return d.getFullYear() + "-" + m + "-" + day;
+  }
+
+  function formatDate(iso) {
+    var p = String(iso || "").split("-");
+    return p.length === 3 ? p[2] + "/" + p[1] + "/" + p[0] : "";
+  }
+
+  function money(n) { return brl.format(Number(n) || 0); }
+
+  /* ---------- Abas ---------- */
+  function showTab(name) {
+    ["salario", "agenda", "quarto"].forEach(function (t) {
+      $("view-" + t).hidden = t !== name;
+      $("tab-" + t).setAttribute("aria-selected", String(t === name));
+    });
+  }
+
+  document.querySelectorAll(".tab").forEach(function (btn) {
+    btn.addEventListener("click", function () { showTab(btn.dataset.tab); });
+  });
+
+  /* ---------- Salário ---------- */
+  function renderSalary() {
+    var extrasTotal = state.extras.reduce(function (s, e) { return s + (Number(e.value) || 0); }, 0);
+    var income = state.salary + extrasTotal;
+    var spent = state.expenses.reduce(function (s, e) { return s + (Number(e.value) || 0); }, 0);
+    var paid = state.expenses.filter(function (e) { return e.status === "pago"; })
+      .reduce(function (s, e) { return s + (Number(e.value) || 0); }, 0);
+    var balance = income - spent;
+
+    $("c-entradas").textContent = money(income);
+    $("c-gastos").textContent = money(spent);
+    $("c-gastos-sub").textContent = "Pago: " + money(paid) + " · Pendente: " + money(spent - paid);
+
+    var saldoEl = $("c-saldo");
+    saldoEl.textContent = money(balance);
+    saldoEl.className = balance < 0 ? "neg" : "pos";
+
+    var pct = income > 0 ? (spent / income) * 100 : (spent > 0 ? 100 : 0);
+    var shown = Math.min(pct, 100);
+    $("bar-pct").textContent = pct.toFixed(1).replace(".", ",") + "%";
+    $("bar").setAttribute("aria-valuenow", String(Math.round(shown)));
+    var fill = $("bar-fill");
+    fill.style.width = shown + "%";
+    fill.style.background = pct > 100 ? "var(--bad)" : pct >= 80 ? "var(--warn)" : "var(--ok)";
+
+    if (document.activeElement !== $("salary-input")) {
+      $("salary-input").value = state.salary ? state.salary : "";
+    }
+
+    var extraList = $("extra-list");
+    extraList.innerHTML = state.extras.length ? "" : '<li class="empty">Nenhuma entrada extra.</li>';
+    state.extras.forEach(function (e) {
+      var li = document.createElement("li");
+      li.className = "item";
+      li.innerHTML =
+        '<div class="info"><div class="title">' + esc(e.desc) + '</div></div>' +
+        '<span class="value">' + money(e.value) + '</span>' +
+        '<div class="actions"><button class="btn small danger" data-act="del-extra" data-id="' + esc(e.id) + '">Excluir</button></div>';
+      extraList.appendChild(li);
+    });
+
+    var list = $("exp-list");
+    list.innerHTML = state.expenses.length ? "" : '<li class="empty">Nenhum gasto lançado ainda.</li>';
+    state.expenses.forEach(function (e) {
+      var isPaid = e.status === "pago";
+      var li = document.createElement("li");
+      li.className = "item" + (isPaid ? " done" : "");
+      li.innerHTML =
+        '<div class="info"><div class="title">' + esc(e.desc) + '</div>' +
+        '<div class="meta">' + esc(e.category) + ' · <span class="tag ' + (isPaid ? "pago" : "pendente") + '">' + (isPaid ? "Pago" : "Pendente") + '</span></div></div>' +
+        '<span class="value">' + money(e.value) + '</span>' +
+        '<div class="actions">' +
+          '<button class="btn small ghost" data-act="toggle-exp" data-id="' + esc(e.id) + '">' + (isPaid ? "Marcar pendente" : "Marcar pago") + '</button>' +
+          '<button class="btn small danger" data-act="del-exp" data-id="' + esc(e.id) + '">Excluir</button>' +
+        '</div>';
+      list.appendChild(li);
+    });
+  }
+
+  $("salary-save").addEventListener("click", function () {
+    var v = parseFloat($("salary-input").value);
+    state.salary = isFinite(v) && v > 0 ? v : 0;
+    saveState();
+    renderSalary();
+  });
+
+  $("extra-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var desc = $("extra-desc").value.trim();
+    var value = parseFloat($("extra-value").value);
+    if (!desc || !isFinite(value) || value <= 0) return;
+    state.extras.push({ id: uid(), desc: desc, value: value });
+    saveState();
+    this.reset();
+    renderSalary();
+  });
+
+  $("exp-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var desc = $("exp-desc").value.trim();
+    var value = parseFloat($("exp-value").value);
+    if (!desc || !isFinite(value) || value <= 0) return;
+    state.expenses.push({
+      id: uid(),
+      desc: desc,
+      value: value,
+      category: $("exp-cat").value,
+      status: $("exp-status").value === "pago" ? "pago" : "pendente"
+    });
+    saveState();
+    this.reset();
+    renderSalary();
+  });
+
+  $("view-salario").addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-act]");
+    if (!btn) return;
+    var id = btn.dataset.id;
+    if (btn.dataset.act === "del-extra") {
+      state.extras = state.extras.filter(function (e) { return e.id !== id; });
+    } else if (btn.dataset.act === "del-exp") {
+      state.expenses = state.expenses.filter(function (e) { return e.id !== id; });
+    } else if (btn.dataset.act === "toggle-exp") {
+      state.expenses.forEach(function (e) {
+        if (e.id === id) e.status = e.status === "pago" ? "pendente" : "pago";
+      });
+    } else {
+      return;
+    }
+    saveState();
+    renderSalary();
+  });
+
+  /* ---------- Agenda ---------- */
+  function renderTasks() {
+    var today = todayISO();
+    var items = state.tasks.filter(function (t) {
+      if (filter === "hoje") return t.date === today;
+      if (filter === "concluidos") return !!t.done;
+      return true;
+    }).sort(function (a, b) {
+      var ka = (a.date || "") + " " + (a.time || "99:99");
+      var kb = (b.date || "") + " " + (b.time || "99:99");
+      return ka < kb ? -1 : ka > kb ? 1 : 0;
+    });
+
+    document.querySelectorAll(".filters [data-filter]").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.filter === filter));
+    });
+
+    var list = $("task-list");
+    var emptyMsg = { hoje: "Nada marcado para hoje.", todos: "Nenhum compromisso ainda.", concluidos: "Nenhum compromisso concluído." }[filter];
+    list.innerHTML = items.length ? "" : '<li class="empty">' + emptyMsg + '</li>';
+
+    items.forEach(function (t) {
+      var urgent = t.priority === "urgente";
+      var li = document.createElement("li");
+      li.className = "item" + (t.done ? " done" : "") + (urgent ? " urgente" : "");
+      li.innerHTML =
+        '<div class="info"><div class="title">' + esc(t.title) + '</div>' +
+        '<div class="meta">' + formatDate(t.date) + (t.time ? " às " + esc(t.time) : "") +
+        (urgent ? ' · <span class="tag urgente">Urgente</span>' : "") + '</div></div>' +
+        '<div class="actions">' +
+          '<button class="btn small ghost" data-act="toggle-task" data-id="' + esc(t.id) + '">' + (t.done ? "Reabrir" : "Concluir") + '</button>' +
+          '<button class="btn small danger" data-act="del-task" data-id="' + esc(t.id) + '">Excluir</button>' +
+        '</div>';
+      list.appendChild(li);
+    });
+  }
+
+  $("task-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var title = $("task-title").value.trim();
+    var date = $("task-date").value;
+    if (!title || !date) return;
+    state.tasks.push({
+      id: uid(),
+      title: title,
+      date: date,
+      time: $("task-time").value,
+      priority: $("task-prio").value === "urgente" ? "urgente" : "normal",
+      done: false
+    });
+    saveState();
+    this.reset();
+    $("task-date").value = todayISO();
+    renderTasks();
+  });
+
+  $("view-agenda").addEventListener("click", function (ev) {
+    var f = ev.target.closest("[data-filter]");
+    if (f) { filter = f.dataset.filter; renderTasks(); return; }
+
+    var btn = ev.target.closest("button[data-act]");
+    if (!btn) return;
+    var id = btn.dataset.id;
+    if (btn.dataset.act === "del-task") {
+      state.tasks = state.tasks.filter(function (t) { return t.id !== id; });
+    } else if (btn.dataset.act === "toggle-task") {
+      state.tasks.forEach(function (t) { if (t.id === id) t.done = !t.done; });
+    } else {
+      return;
+    }
+    saveState();
+    renderTasks();
+  });
+
+  /* ---------- Início ---------- */
+  $("task-date").value = todayISO();
+  renderSalary();
+  renderTasks();
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+
+  var KEY = "meuPainel:quarto:v2";
+  var OLD_KEY = "meuPainel:quarto:v1";
+  var MIN_ITEM = 5, MAX_ITEM = 1000;   // cm
+  var MIN_ROOM = 100, MAX_ROOM = 2000; // cm
+
+  function $(id) { return document.getElementById(id); }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+  function fmt(n) { return n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+  function textColor(hex) {
+    var n = parseInt(String(hex).slice(1), 16);
+    var lum = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+    return lum > 0.6 ? "#000000" : "#ffffff";
+  }
+
+  var roomEl = $("room");
+  var listEl = $("room-list");
+  var msgEl = $("room-msg");
+  var infoEl = $("room-info");
+  var st = load();   // { w: cm, h: cm, items: [...] }
+  var drag = null;
+
+  /* ---------- Armazenamento ---------- */
+  function cleanItems(arr, legacy, W, H) {
+    if (!Array.isArray(arr)) return [];
+    return arr.filter(function (it) {
+      return it && typeof it.id === "string" && typeof it.name === "string";
+    }).map(function (it) {
+      var photo = typeof it.photo === "string" && it.photo.indexOf("data:image/") === 0 ? it.photo : "";
+      var w, h, x, y;
+      if (legacy) {
+        // versão antiga guardava tudo em % de um quarto (aqui tratado como 3 x 3 m)
+        w = (Number(it.size) || 16) / 100 * 300;
+        h = w;
+        x = (Number(it.x) || 0) / 100 * 300;
+        y = (Number(it.y) || 0) / 100 * 300;
+      } else {
+        w = Number(it.w) || 60;
+        h = Number(it.h) || 60;
+        x = Number(it.x) || 0;
+        y = Number(it.y) || 0;
+      }
+      var out = { id: it.id, name: it.name, photo: photo, w: clamp(w, MIN_ITEM, MAX_ITEM), h: clamp(h, MIN_ITEM, MAX_ITEM), x: x, y: y, color: /^#[0-9a-f]{6}$/i.test(it.color) ? it.color : "#c4000f", showPhoto: !!photo && (it.showPhoto === undefined ? true : !!it.showPhoto) };
+      fit(out, W, H);
+      return out;
+    });
+  }
+
+  function load() {
+    var s = { w: 300, h: 300, items: [] };
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var d = JSON.parse(raw);
+        if (d && typeof d === "object") {
+          s.w = clamp(Number(d.w) || 300, MIN_ROOM, MAX_ROOM);
+          s.h = clamp(Number(d.h) || 300, MIN_ROOM, MAX_ROOM);
+          s.items = cleanItems(d.items, false, s.w, s.h);
+        }
+      } else {
+        var old = localStorage.getItem(OLD_KEY);
+        if (old) s.items = cleanItems(JSON.parse(old), true, s.w, s.h);
+      }
+    } catch (e) {
+      console.warn("Não foi possível ler o quarto salvo:", e);
+    }
+    return s;
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(st));
+      msgEl.textContent = "";
+      return true;
+    } catch (e) {
+      console.warn("Não foi possível salvar o quarto:", e);
+      msgEl.textContent = "Não deu pra salvar: a memória do navegador encheu. Exclua algum item e tente de novo.";
+      return false;
+    }
+  }
+
+  function fit(it, W, H) {
+    W = W || st.w; H = H || st.h;
+    it.x = clamp(it.x, 0, Math.max(0, W - it.w));
+    it.y = clamp(it.y, 0, Math.max(0, H - it.h));
+  }
+
+  function find(id) { return st.items.filter(function (i) { return i.id === id; })[0]; }
+
+  /* ---------- Foto (reduz pra economizar espaço) ---------- */
+  function readPhoto(file, done) {
+    var reader = new FileReader();
+    reader.onerror = function () { done(""); };
+    reader.onload = function () {
+      var img = new Image();
+      img.onerror = function () { done(""); };
+      img.onload = function () {
+        var ratio = Math.min(1, 300 / Math.max(img.width, img.height));
+        var c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(img.width * ratio));
+        c.height = Math.max(1, Math.round(img.height * ratio));
+        var ctx = c.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        done(c.toDataURL("image/jpeg", 0.75));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /* ---------- Desenho na tela ---------- */
+  function place(node, it) {
+    node.style.left = (it.x / st.w * 100) + "%";
+    node.style.top = (it.y / st.h * 100) + "%";
+    node.style.width = (it.w / st.w * 100) + "%";
+    node.style.height = (it.h / st.h * 100) + "%";
+  }
+
+  function makeNode(it) {
+    var n = document.createElement("div");
+    n.className = "room-item";
+    n.dataset.id = it.id;
+    place(n, it);
+    if (it.photo && it.showPhoto) {
+      var img = document.createElement("img");
+      img.src = it.photo;
+      img.alt = it.name;
+      img.draggable = false;
+      n.appendChild(img);
+      var lbl = document.createElement("span");
+      lbl.className = "lbl";
+      lbl.textContent = it.name;
+      n.appendChild(lbl);
+    } else {
+      var ph = document.createElement("div");
+      ph.className = "ph";
+      ph.style.background = it.color;
+      ph.style.color = textColor(it.color);
+      var nm = document.createElement("span");
+      nm.className = "ph-name";
+      nm.textContent = it.name;
+      var sz = document.createElement("small");
+      sz.textContent = Math.round(it.w) + "×" + Math.round(it.h);
+      ph.appendChild(nm);
+      ph.appendChild(sz);
+      n.appendChild(ph);
+    }
+    return n;
+  }
+
+  function dimInput(it, key, label) {
+    var i = document.createElement("input");
+    i.type = "number";
+    i.min = String(MIN_ITEM);
+    i.max = String(MAX_ITEM);
+    i.step = "1";
+    i.inputMode = "numeric";
+    i.value = String(Math.round(it[key]));
+    i.dataset.id = it.id;
+    i.dataset.dim = key;
+    i.setAttribute("aria-label", label + " de " + it.name + " em centímetros");
+    return i;
+  }
+
+  function makeRow(it) {
+    var li = document.createElement("li");
+    li.className = "item";
+
+    var thumb;
+    if (it.photo) {
+      thumb = document.createElement("img");
+      thumb.className = "thumb";
+      thumb.src = it.photo;
+      thumb.alt = "";
+    } else {
+      thumb = document.createElement("div");
+      thumb.className = "thumb ph";
+      thumb.style.background = it.color;
+      thumb.style.color = textColor(it.color);
+      thumb.textContent = it.name.charAt(0).toUpperCase();
+    }
+    li.appendChild(thumb);
+
+    var info = document.createElement("div");
+    info.className = "info";
+    var title = document.createElement("div");
+    title.className = "title";
+    title.textContent = it.name;
+    info.appendChild(title);
+
+    var dims = document.createElement("div");
+    dims.className = "dims";
+    dims.appendChild(dimInput(it, "w", "Largura"));
+    dims.appendChild(document.createTextNode("×"));
+    dims.appendChild(dimInput(it, "h", "Comprimento"));
+    dims.appendChild(document.createTextNode("cm"));
+    var col = document.createElement("input");
+    col.type = "color";
+    col.value = it.color;
+    col.dataset.id = it.id;
+    col.dataset.color = "1";
+    col.setAttribute("aria-label", "Cor de " + it.name + " na planta");
+    dims.appendChild(col);
+    info.appendChild(dims);
+    li.appendChild(info);
+
+    var actions = document.createElement("div");
+    actions.className = "actions";
+    var defs = [];
+    if (it.photo) defs.push(["toggle-photo", it.showPhoto ? "Só retângulo" : "Foto na planta", "btn small ghost"]);
+    defs.push(["rotate", "Girar 90°", "btn small ghost"]);
+    defs.push(["del-room", "Excluir", "btn small danger"]);
+    defs.forEach(function (a) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = a[2];
+      b.dataset.act = a[0];
+      b.dataset.id = it.id;
+      b.textContent = a[1];
+      actions.appendChild(b);
+    });
+    li.appendChild(actions);
+    return li;
+  }
+
+  function render() {
+    var W = st.w, H = st.h;
+
+    // formato e escala da planta
+    roomEl.style.aspectRatio = W + " / " + H;
+    roomEl.style.width = "min(100%, " + (72 * W / H).toFixed(2) + "vh)";
+    roomEl.style.backgroundSize = (50 / W * 100) + "% " + (50 / H * 100) + "%";
+
+    if (document.activeElement !== $("room-w")) $("room-w").value = String(W / 100);
+    if (document.activeElement !== $("room-h")) $("room-h").value = String(H / 100);
+
+    roomEl.innerHTML = "";
+    st.items.forEach(function (it) { fit(it); roomEl.appendChild(makeNode(it)); });
+    if (!st.items.length) {
+      var empty = document.createElement("div");
+      empty.className = "room-empty";
+      empty.textContent = "Seu quarto está vazio. Adicione o primeiro item abaixo.";
+      roomEl.appendChild(empty);
+    }
+
+    listEl.innerHTML = "";
+    if (!st.items.length) {
+      var li = document.createElement("li");
+      li.className = "empty";
+      li.textContent = "Nenhum item ainda.";
+      listEl.appendChild(li);
+    }
+    st.items.forEach(function (it) { listEl.appendChild(makeRow(it)); });
+
+    // resumo com as medidas
+    var area = (W * H) / 10000;
+    var used = st.items.reduce(function (s, it) { return s + (it.w * it.h) / 10000; }, 0);
+    var text = "Quarto: " + fmt(W / 100) + " × " + fmt(H / 100) + " m (" + fmt(area) + " m²). " +
+      "Itens ocupam " + fmt(used) + " m² (" + Math.round(used / area * 100) + "% do chão). " +
+      "Cada quadradinho da grade = 50 cm.";
+    var big = st.items.filter(function (it) { return it.w > W || it.h > H; }).map(function (it) { return it.name; });
+    if (big.length) text += " Atenção: maior que o quarto: " + big.join(", ") + ".";
+    infoEl.textContent = text;
+  }
+
+  /* ---------- Medidas do quarto ---------- */
+  $("room-size-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var w = parseFloat($("room-w").value) * 100;
+    var h = parseFloat($("room-h").value) * 100;
+    if (!isFinite(w) || !isFinite(h)) return;
+    st.w = clamp(w, MIN_ROOM, MAX_ROOM);
+    st.h = clamp(h, MIN_ROOM, MAX_ROOM);
+    st.items.forEach(function (it) { fit(it); });
+    save();
+    render();
+  });
+
+  /* ---------- Adicionar item ---------- */
+  function addItem(name, photo, w, h, color, usePhoto) {
+    var it = { id: uid(), name: name, photo: photo, w: w, h: h, x: (st.w - w) / 2, y: (st.h - h) / 2, color: color, showPhoto: !!photo && !!usePhoto };
+    fit(it);
+    st.items.push(it);
+    if (!save()) st.items.pop();
+    render();
+  }
+
+  $("room-form").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var form = this;
+    var name = $("room-name").value.trim();
+    var w = parseFloat($("room-iw").value);
+    var h = parseFloat($("room-ih").value);
+    var color = $("room-color").value;
+    var usePhoto = $("room-usephoto").checked;
+    if (!name || !isFinite(w) || !isFinite(h)) return;
+    w = clamp(w, MIN_ITEM, MAX_ITEM);
+    h = clamp(h, MIN_ITEM, MAX_ITEM);
+    var file = $("room-photo").files && $("room-photo").files[0];
+    var btn = $("room-add");
+    if (!file) {
+      addItem(name, "", w, h, color, false);
+      form.reset();
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = "Processando foto...";
+    readPhoto(file, function (dataUrl) {
+      btn.disabled = false;
+      btn.textContent = "Adicionar ao quarto";
+      if (!dataUrl) {
+        msgEl.textContent = "Não consegui ler essa foto. Tente outra imagem.";
+        return;
+      }
+      addItem(name, dataUrl, w, h, color, usePhoto);
+      form.reset();
+    });
+  });
+
+  /* ---------- Lista: medidas, girar e excluir ---------- */
+  listEl.addEventListener("change", function (ev) {
+    var colorInp = ev.target.closest("input[data-color]");
+    if (colorInp) {
+      var c = find(colorInp.dataset.id);
+      if (c && /^#[0-9a-f]{6}$/i.test(colorInp.value)) { c.color = colorInp.value; save(); }
+      render();
+      return;
+    }
+    var inp = ev.target.closest("input[data-dim]");
+    if (!inp) return;
+    var it = find(inp.dataset.id);
+    var v = parseFloat(inp.value);
+    if (it && isFinite(v)) {
+      it[inp.dataset.dim] = clamp(v, MIN_ITEM, MAX_ITEM);
+      fit(it);
+      save();
+    }
+    render();
+  });
+
+  listEl.addEventListener("click", function (ev) {
+    var btn = ev.target.closest("button[data-act]");
+    if (!btn) return;
+    var it = find(btn.dataset.id);
+    if (!it) return;
+    if (btn.dataset.act === "del-room") {
+      st.items = st.items.filter(function (i) { return i.id !== it.id; });
+    } else if (btn.dataset.act === "toggle-photo") {
+      it.showPhoto = !it.showPhoto;
+    } else if (btn.dataset.act === "rotate") {
+      var t = it.w; it.w = it.h; it.h = t;
+      fit(it);
+    } else {
+      return;
+    }
+    save();
+    render();
+  });
+
+  /* ---------- Arrastar (mouse e toque) ---------- */
+  roomEl.addEventListener("pointerdown", function (ev) {
+    var node = ev.target.closest(".room-item");
+    if (!node) return;
+    var it = find(node.dataset.id);
+    if (!it) return;
+    ev.preventDefault();
+    var r = roomEl.getBoundingClientRect();
+    var nr = node.getBoundingClientRect();
+    drag = {
+      it: it, node: node,
+      dx: ev.clientX - nr.left, dy: ev.clientY - nr.top,
+      rl: r.left + roomEl.clientLeft, rt: r.top + roomEl.clientTop,
+      rw: roomEl.clientWidth, rh: roomEl.clientHeight,
+      nw: nr.width, nh: nr.height
+    };
+    try { node.setPointerCapture(ev.pointerId); } catch (e) { /* ok */ }
+    node.classList.add("dragging");
+    roomEl.appendChild(node);
+  });
+
+  roomEl.addEventListener("pointermove", function (ev) {
+    if (!drag) return;
+    var px = clamp(ev.clientX - drag.dx - drag.rl, 0, Math.max(0, drag.rw - drag.nw));
+    var py = clamp(ev.clientY - drag.dy - drag.rt, 0, Math.max(0, drag.rh - drag.nh));
+    drag.it.x = (px / drag.rw) * st.w;
+    drag.it.y = (py / drag.rh) * st.h;
+    place(drag.node, drag.it);
+  });
+
+  function endDrag() {
+    if (!drag) return;
+    drag.node.classList.remove("dragging");
+    var moved = drag.it;
+    st.items = st.items.filter(function (i) { return i.id !== moved.id; });
+    st.items.push(moved);
+    drag = null;
+    save();
+  }
+  roomEl.addEventListener("pointerup", endDrag);
+  roomEl.addEventListener("pointercancel", endDrag);
+
+  render();
+})();
+</script>
+</body>
+</html>
